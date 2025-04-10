@@ -135,3 +135,14 @@ app
     });
   })
   .catch(console.log);
+
+ipcMain.handle('scrap-league', async (_event, league: string) => {
+  console.log(`Iniciando scrap para la liga: ${league}`);
+
+  // Acá podrías llamar a una función real de web scraping
+  // por ejemplo:
+  // const result = await scrapLeague(league);
+  // return result;
+
+  return `Scraping realizado para: ${league}`;
+});
