@@ -11,7 +11,7 @@ body {
 }
 
 .buttonA {
-  background-color: #4caf50; /* Green */
+  background-color: #4d39c0; /* Green */
   color: white;
   border: none;
   padding: 10px 20px;
@@ -24,13 +24,13 @@ body {
 }
 
 .buttonA:hover {
-  background-color: #45a049;
+  background-color: #120c6b;
   transform: scale(1.05);
 }
 
 .buttonB {
-  background-color: #f44336; /* Red */
-  color: white;
+  background-color: #ffffff; /* Red */
+  color: rgb(76, 79, 251);
   border: none;
   padding: 10px 20px;
   font-size: 16px;
@@ -42,6 +42,21 @@ body {
 }
 
 .buttonB:hover {
-  background-color: #d32f2f;
+  background-color: #9ffcc4;
   transform: scale(1.05);
+}
+
+.image-container {
+  position: relative;
+  display: inline-block;
+  cursor: zoom-in;
+}
+
+.image-container img {
+  transition: transform 0.2s ease;
+}
+
+.image-container.enlarged img {
+  transform: scale(2);
+  z-index: 999;
 }

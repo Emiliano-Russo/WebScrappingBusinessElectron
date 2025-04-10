@@ -14,6 +14,12 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { scrapeProducts } from './scrapping/huangali';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+import dotenv from 'dotenv';
+import { uploadProductToShopify } from './shopify/product';
+dotenv.config();
 
 class AppUpdater {
   constructor() {
@@ -136,13 +142,38 @@ app
   })
   .catch(console.log);
 
-ipcMain.handle('scrap-league', async (_event, league: string) => {
-  console.log(`Iniciando scrap para la liga: ${league}`);
+ipcMain.handle('scrap-league', async (_event, link: string) => {
+  console.log(`Iniciando scrap para: ${link}`);
 
-  // Acá podrías llamar a una función real de web scraping
-  // por ejemplo:
-  // const result = await scrapLeague(league);
-  // return result;
+  try {
+    const result = await scrapeProducts(link, 'https://www.huangali.com');
 
-  return `Scraping realizado para: ${league}`;
+    console.log('Scraping finalizado. Resultados:');
+    result.forEach((product, index) => {
+      console.log(`\nProducto ${index + 1}`);
+      console.log(`Nombre: ${product.title}`);
+      console.log(`URL: ${product.url}`);
+      console.log(`Precio: ${product.price}`);
+      if (product.oldPrice) console.log(`Precio anterior: ${product.oldPrice}`);
+      if (product.discount) console.log(`Descuento: ${product.discount}`);
+      console.log(`Sale: ${product.sale ? 'Sí' : 'No'}`);
+      console.log(`Imágenes:`);
+      product.images.forEach((img, i) => console.log(`  [${i + 1}] ${img}`));
+    });
+
+    return result; // opcionalmente, devolvés el array completo
+  } catch (error) {
+    console.error('Error durante el scraping:', error);
+    return { error: 'Scraping fallido. Ver consola para más detalles.' };
+  }
+});
+
+ipcMain.handle('shopify-add-product', async (_event, productData) => {
+  try {
+    const data = await uploadProductToShopify(productData);
+    return { success: true, data };
+  } catch (err: any) {
+    console.error('Shopify API error:', err.response?.data || err);
+    return { success: false, error: err.message || 'Error desconocido' };
+  }
 });

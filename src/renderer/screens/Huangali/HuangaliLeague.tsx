@@ -9,6 +9,8 @@ const slugify = (str: string) =>
     .replace(/[^\w-]+/g, '');
 
 export const HuangaliLeague: React.FC = () => {
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [zoomedImg, setZoomedImg] = React.useState<string | null>(null);
   const { league: slug } = useParams();
   const navigate = useNavigate();
 
@@ -41,11 +43,38 @@ export const HuangaliLeague: React.FC = () => {
     try {
       const result = await window.electron.ipcRenderer.invoke(
         'scrap-league',
-        selectedLeague.title,
+        selectedLeague.link,
       );
-      alert(result); // O podés usar un toast
+      if (result.error) {
+        alert(result.error);
+      } else {
+        setProducts(result.map((p: any) => ({ ...p, extraImages: [] })));
+      }
     } catch (err) {
       console.error('Error durante el scraping:', err);
+    }
+  };
+
+  const handleAddToShopify = async (product: any) => {
+    try {
+      const res = await window.electron.ipcRenderer.invoke(
+        'shopify-add-product',
+        {
+          title: product.title,
+          price: product.price,
+          images: [...product.images, ...(product.extraImages || [])],
+          url: product.url,
+          description: `Scrappeado desde Huangali.\nOriginal: ${product.url}`,
+        },
+      );
+      if (res.success) {
+        alert('Producto agregado con éxito a Shopify');
+      } else {
+        alert(res.error || 'Error al agregar producto');
+      }
+    } catch (err) {
+      console.error('Error al enviar a Shopify:', err);
+      alert('Fallo de conexión o error inesperado.');
     }
   };
 
@@ -86,6 +115,74 @@ export const HuangaliLeague: React.FC = () => {
       >
         Comenzar Scrapping
       </button>
+
+      {products.length > 0 && (
+        <div style={{ marginTop: '24px' }}>
+          <h3>Productos encontrados:</h3>
+          {products.map((product, idx) => (
+            <div
+              key={idx}
+              style={{
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '16px',
+              }}
+            >
+              <h4>{product.title}</h4>
+              <p>
+                <strong>Precio:</strong> ${product.price}{' '}
+                {product.oldPrice && (
+                  <>
+                    (<del>${product.oldPrice}</del>)
+                  </>
+                )}
+              </p>
+              {product.discount && <p>Descuento: {product.discount}</p>}
+              <p>{product.sale ? '🟢 En oferta' : '🔵 Sin oferta'}</p>
+
+              {/* Imágenes originales (scrap-league) */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {product.images.map((img: string, i: number) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`${product.title} ${i + 1}`}
+                    style={{
+                      width: '400px',
+                      borderRadius: '4px',
+                    }}
+                  />
+                ))}
+              </div>
+
+              <a
+                href={product.url}
+                style={{ color: 'pink' }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ver producto →
+              </a>
+              <br />
+              <button
+                onClick={() => handleAddToShopify(product)}
+                style={{
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  backgroundColor: '#5cb85c',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                Agregar a Shopify
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

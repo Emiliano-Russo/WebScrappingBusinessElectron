@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-export type Channels = 'ipc-example' | 'scrap-league';
+export type Channels = 'ipc-example' | 'scrap-league' | 'shopify-add-product';
 
 const electronHandler = {
   ipcRenderer: {
