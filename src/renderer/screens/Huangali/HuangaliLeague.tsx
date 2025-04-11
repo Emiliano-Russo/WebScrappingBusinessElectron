@@ -10,7 +10,7 @@ const slugify = (str: string) =>
 
 export const HuangaliLeague: React.FC = () => {
   const [products, setProducts] = React.useState<any[]>([]);
-  const [zoomedImg, setZoomedImg] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1); // 🔹 Página seleccionada
   const { league: slug } = useParams();
   const navigate = useNavigate();
 
@@ -40,10 +40,11 @@ export const HuangaliLeague: React.FC = () => {
   }
 
   const handleScrap = async () => {
+    const fullUrl = `${selectedLeague.link}?page=${page}`;
     try {
       const result = await window.electron.ipcRenderer.invoke(
         'scrap-league',
-        selectedLeague.link,
+        fullUrl,
       );
       if (result.error) {
         alert(result.error);
@@ -65,6 +66,7 @@ export const HuangaliLeague: React.FC = () => {
           images: [...product.images, ...(product.extraImages || [])],
           url: product.url,
           description: `Scrappeado desde Huangali.\nOriginal: ${product.url}`,
+          collectionHandle: slug, // 👈 esto es clave
         },
       );
       if (res.success) {
@@ -101,20 +103,27 @@ export const HuangaliLeague: React.FC = () => {
         ← Volver
       </button>
       <h2>{selectedLeague.title}</h2>
-      <a
-        href={selectedLeague.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ display: 'block', marginBottom: '12px', color: 'pink' }}
-      >
-        {selectedLeague.link}
-      </a>
-      <button
-        onClick={handleScrap}
-        style={{ marginTop: '12px', padding: '8px 16px', cursor: 'pointer' }}
-      >
-        Comenzar Scrapping
-      </button>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ marginRight: '8px' }}>Página:</label>
+        <input
+          type="number"
+          value={page}
+          onChange={(e) => setPage(parseInt(e.target.value, 10) || 1)}
+          style={{ width: '60px', padding: '4px' }}
+          min={1}
+        />
+        <button
+          onClick={handleScrap}
+          style={{
+            marginLeft: '12px',
+            padding: '8px 16px',
+            cursor: 'pointer',
+          }}
+        >
+          Scrappear página
+        </button>
+      </div>
 
       {products.length > 0 && (
         <div style={{ marginTop: '24px' }}>
@@ -141,7 +150,6 @@ export const HuangaliLeague: React.FC = () => {
               {product.discount && <p>Descuento: {product.discount}</p>}
               <p>{product.sale ? '🟢 En oferta' : '🔵 Sin oferta'}</p>
 
-              {/* Imágenes originales (scrap-league) */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {product.images.map((img: string, i: number) => (
                   <img
