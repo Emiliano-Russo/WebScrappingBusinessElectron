@@ -11,6 +11,7 @@ const slugify = (str: string) =>
 export const HuangaliLeague: React.FC = () => {
   const [products, setProducts] = React.useState<any[]>([]);
   const [selected, setSelected] = React.useState<number[]>([]);
+  const [filterKids, setFilterKids] = React.useState<boolean>(true);
   const [page, setPage] = React.useState<number>(1);
   const [progress, setProgress] = React.useState<string | null>(null);
 
@@ -54,6 +55,7 @@ export const HuangaliLeague: React.FC = () => {
         collectionHandle: slug,
       });
     }
+    setSelected([]);
     setProgress(null);
     alert('Carga finalizada');
   };
@@ -80,31 +82,46 @@ export const HuangaliLeague: React.FC = () => {
             Agregar {selected.length} a Shopify
           </button>
         )}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h4>Filtrar Niños</h4>
+          <input
+            type="checkbox"
+            checked={filterKids}
+            onChange={(val) => setFilterKids(val.target.checked)}
+            style={{ marginRight: '8px', width: 20, height: 15 }}
+          />
+        </div>
         {progress && (
           <span style={{ marginLeft: 10 }}>Progreso: {progress}</span>
         )}
       </div>
 
-      {products.map((product, idx) => (
-        <div
-          key={idx}
-          style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}
-        >
-          <input
-            type="checkbox"
-            checked={selected.includes(idx)}
-            onChange={() => toggleSelect(idx)}
-            style={{ marginRight: '8px' }}
-          />
-          <strong>{product.title}</strong>
-          <p>Precio: ${product.price}</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {product.images.map((img: string, i: number) => (
-              <img key={i} src={img} style={{ width: 100 }} />
-            ))}
+      {products
+        .filter((product) => !filterKids || !/kids/i.test(product.title))
+        .map((product, idx) => (
+          <div
+            key={idx}
+            style={{
+              border: '1px solid #ccc',
+              margin: '10px',
+              padding: '10px',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selected.includes(idx)}
+              onChange={() => toggleSelect(idx)}
+              style={{ marginRight: '8px' }}
+            />
+            <strong>{product.title}</strong>
+            <p>Precio: ${product.price}</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {product.images.map((img: string, i: number) => (
+                <img key={i} src={img} style={{ width: 100 }} />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 };

@@ -50,7 +50,11 @@ const COLLECTION_IDS: Record<string, number> = {
   'la-liga': 479203131585,
   'ligue-1': 479203164353,
   bundesliga: 479203197121,
+  retro: 479299436737,
+  special: 479299469505,
 };
+
+// ... importaciones y funciones anteriores
 
 export async function uploadProductToShopify(productData: any) {
   const dollarPrice = parseFloat(
@@ -65,6 +69,7 @@ export async function uploadProductToShopify(productData: any) {
     productData.images.map((url: string) => urlToBase64(url)),
   );
 
+  // Crear producto en Shopify
   const productRes = await axios.post(
     `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/products.json`,
     {
@@ -84,10 +89,29 @@ export async function uploadProductToShopify(productData: any) {
 
   const productId = productRes.data.product.id;
 
+  // Colecciones a asociar
+  const collectionIds: number[] = [];
+
+  // Principal (por liga)
   if (productData.collectionHandle) {
-    const collectionId = COLLECTION_IDS[productData.collectionHandle];
-    if (collectionId) {
-      await axios.post(
+    const mainCollectionId = COLLECTION_IDS[productData.collectionHandle];
+    if (mainCollectionId) collectionIds.push(mainCollectionId);
+  }
+
+  // Agregar a "Retro" si el título contiene "retro"
+  if (/retro/i.test(productData.title)) {
+    collectionIds.push(COLLECTION_IDS['retro']);
+  }
+
+  // Agregar a "Special" si el título contiene "special"
+  if (/special/i.test(productData.title)) {
+    collectionIds.push(COLLECTION_IDS['special']);
+  }
+
+  // Asociar a todas las colecciones detectadas
+  await Promise.all(
+    collectionIds.map((collectionId) =>
+      axios.post(
         `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/collects.json`,
         {
           collect: {
@@ -101,9 +125,9 @@ export async function uploadProductToShopify(productData: any) {
             'Content-Type': 'application/json',
           },
         },
-      );
-    }
-  }
+      ),
+    ),
+  );
 
   return productRes.data;
 }
