@@ -22,6 +22,8 @@ export const HuangaliLeague: React.FC = () => {
   );
 
   const handleScrap = async () => {
+    setProducts([]); // ← Limpieza previa opcional
+    setSelected([]);
     const fullUrl = `${selectedLeague!.link}?page=${page}`;
     const result = await window.electron.ipcRenderer.invoke(
       'scrap-league',
@@ -97,8 +99,9 @@ export const HuangaliLeague: React.FC = () => {
       </div>
 
       {products
-        .filter((product) => !filterKids || !/kids/i.test(product.title))
-        .map((product, idx) => (
+        .map((product, idx) => ({ product, idx })) // incluimos índice real
+        .filter(({ product }) => !filterKids || !/kids/i.test(product.title))
+        .map(({ product, idx }) => (
           <div
             key={idx}
             style={{

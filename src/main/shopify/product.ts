@@ -28,6 +28,7 @@ function formatTitle(title: string): string {
     .replace(/Special Kit/gi, 'Kit Especial')
     .replace(/Authentic Jersey/gi, '')
     .replace(/Authentic/gi, '')
+    .replace(/Limited Edition/gi, 'Edición Limitada')
     .replace(/Jersey/gi, '')
     .replace(/Shirt and Shorts/gi, '')
     .replace(/\bHome\b/gi, 'Local')
@@ -52,6 +53,13 @@ const COLLECTION_IDS: Record<string, number> = {
   bundesliga: 479203197121,
   retro: 479299436737,
   special: 479299469505,
+  'brasileiro-serie-a': 479364251841,
+  mls: 479364350145,
+  'liga-mx': 479390597313,
+  'scottish-premiership': 479390630081,
+  eredivisie: 479390662849,
+  'liga-profesional': 479390695617, // liga argentina
+  'primeira-liga-1': 479390728385, // portugal
 };
 
 // ... importaciones y funciones anteriores
@@ -69,14 +77,32 @@ export async function uploadProductToShopify(productData: any) {
     productData.images.map((url: string) => urlToBase64(url)),
   );
 
+  let description = '';
+  if (/player version|versión jugador/i.test(productData.title)) {
+    description +=
+      '⚠️ Esta camiseta es *Versión Jugador*, por lo que se recomienda elegir un talle más del habitual.';
+  }
+
   // Crear producto en Shopify
   const productRes = await axios.post(
     `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/products.json`,
     {
       product: {
         title: formattedTitle,
+        body_html: description,
         images,
-        variants: [{ price: roundedPrice.toFixed(0) }],
+        options: [
+          {
+            name: 'Talle',
+            values: ['S', 'M', 'L', 'XL', 'XXL'],
+          },
+        ],
+        variants: ['S', 'M', 'L', 'XL', 'XXL'].map((size) => ({
+          option1: size,
+          price: roundedPrice.toFixed(0),
+          inventory_management: 'shopify',
+          inventory_quantity: 10,
+        })),
       },
     },
     {
@@ -89,45 +115,35 @@ export async function uploadProductToShopify(productData: any) {
 
   const productId = productRes.data.product.id;
 
-  // Colecciones a asociar
-  const collectionIds: number[] = [];
+  // Determinar la colección única a usar
+  let finalCollectionHandle = productData.collectionHandle;
 
-  // Principal (por liga)
-  if (productData.collectionHandle) {
-    const mainCollectionId = COLLECTION_IDS[productData.collectionHandle];
-    if (mainCollectionId) collectionIds.push(mainCollectionId);
-  }
-
-  // Agregar a "Retro" si el título contiene "retro"
   if (/retro/i.test(productData.title)) {
-    collectionIds.push(COLLECTION_IDS['retro']);
+    finalCollectionHandle = 'retro';
+  } else if (/special/i.test(productData.title)) {
+    finalCollectionHandle = 'special';
   }
 
-  // Agregar a "Special" si el título contiene "special"
-  if (/special/i.test(productData.title)) {
-    collectionIds.push(COLLECTION_IDS['special']);
-  }
+  const collectionId = COLLECTION_IDS[finalCollectionHandle];
 
-  // Asociar a todas las colecciones detectadas
-  await Promise.all(
-    collectionIds.map((collectionId) =>
-      axios.post(
-        `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/collects.json`,
-        {
-          collect: {
-            product_id: productId,
-            collection_id: collectionId,
-          },
+  // Asociar solo a una colección
+  if (collectionId) {
+    await axios.post(
+      `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/collects.json`,
+      {
+        collect: {
+          product_id: productId,
+          collection_id: collectionId,
         },
-        {
-          headers: {
-            'X-Shopify-Access-Token': process.env.SHOPIFY_ACCESS_TOKEN!,
-            'Content-Type': 'application/json',
-          },
+      },
+      {
+        headers: {
+          'X-Shopify-Access-Token': process.env.SHOPIFY_ACCESS_TOKEN!,
+          'Content-Type': 'application/json',
         },
-      ),
-    ),
-  );
+      },
+    );
+  }
 
   return productRes.data;
 }
