@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { leagues_huangali } from './collections';
+import { collections_huangali } from './collections';
 
 const slugify = (str: string) =>
   str
@@ -8,11 +8,11 @@ const slugify = (str: string) =>
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '');
 
-const Huangali: React.FC = () => {
+export const Panel: React.FC = () => {
   const navigate = useNavigate();
 
-  const goToLeague = (league: { title: string; link: string }) => {
-    const slug = slugify(league.title);
+  const goToCollection = (collection: { title: string; link: string }) => {
+    const slug = slugify(collection.title);
     navigate(`/huangali/${slug}`);
   };
 
@@ -30,8 +30,8 @@ const Huangali: React.FC = () => {
       >
         ← Volver
       </button>
-      <h1>Bienvenido al web scrapping de Huangali</h1>
-      <h2>Elige una liga:</h2>
+      <h1>Huangali Panel</h1>
+      <h2>Elige una Colleccion:</h2>
       <div
         style={{
           display: 'flex',
@@ -40,10 +40,10 @@ const Huangali: React.FC = () => {
           flexWrap: 'wrap',
         }}
       >
-        {leagues_huangali.map((league, index) => (
+        {collections_huangali.map((item, index) => (
           <div key={index}>
-            <button className="buttonA" onClick={() => goToLeague(league)}>
-              {league.title}
+            <button className="buttonA" onClick={() => goToCollection(item)}>
+              {item.title}
             </button>
           </div>
         ))}
@@ -51,5 +51,3 @@ const Huangali: React.FC = () => {
     </div>
   );
 };
-
-export default Huangali;

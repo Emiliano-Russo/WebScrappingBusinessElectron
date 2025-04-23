@@ -12,17 +12,17 @@ export const Menu: React.FC = () => {
 
   const pages: MenuItem[] = [
     {
-      web: 'huangali',
+      web: 'Huangali',
       link: 'https://www.huangali.com/',
       navigation: '/huangali',
     },
     {
-      web: 'example',
+      web: 'Example 2',
       link: 'https://www.example.com/',
       navigation: '/example',
     },
     {
-      web: 'anotherSite',
+      web: 'Example 2',
       link: 'https://www.anothersite.com/',
       navigation: '/anotherSite',
     },

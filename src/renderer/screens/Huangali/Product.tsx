@@ -1,14 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { leagues_huangali } from './collections';
+import { collections_huangali } from './collections';
 
-const slugify = (str: string) =>
-  str
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '');
-
-export const HuangaliLeague: React.FC = () => {
+export const Product: React.FC = () => {
   const [products, setProducts] = React.useState<any[]>([]);
   const [selected, setSelected] = React.useState<number[]>([]);
   const [filterKids, setFilterKids] = React.useState<boolean>(true);
@@ -17,14 +11,12 @@ export const HuangaliLeague: React.FC = () => {
 
   const { league: slug } = useParams();
   const navigate = useNavigate();
-  const selectedLeague = leagues_huangali.find(
-    (l) => slugify(l.title) === slug,
-  );
+  const selectedCollection = collections_huangali.find((l) => l.title === slug);
 
   const handleScrap = async () => {
     setProducts([]); // ← Limpieza previa opcional
     setSelected([]);
-    const fullUrl = `${selectedLeague!.link}?page=${page}`;
+    const fullUrl = `${selectedCollection!.link}?page=${page}`;
     const result = await window.electron.ipcRenderer.invoke(
       'scrap-league',
       fullUrl,
@@ -62,14 +54,14 @@ export const HuangaliLeague: React.FC = () => {
     alert('Carga finalizada');
   };
 
-  if (!selectedLeague) {
-    return <div>Error: Liga no encontrada</div>;
+  if (!selectedCollection) {
+    return <div>Error: Colleccion no encontrada</div>;
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <button onClick={() => navigate(-1)}>← Volver</button>
-      <h2>{selectedLeague.title}</h2>
+      <h2>{selectedCollection.title}</h2>
       <div>
         <label>Página:</label>
         <input

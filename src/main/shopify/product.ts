@@ -1,70 +1,10 @@
 import axios from 'axios';
-import path from 'path';
+import { formatTitle, urlToBase64 } from './formatters';
+import { COLLECTION_IDS } from './collection_ids';
+import { ProductData } from './product.interface';
 
-async function urlToBase64(
-  url: string,
-): Promise<{ attachment: string; filename: string }> {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const contentType = response.headers['content-type'] || 'image/jpeg';
-  const base64 = Buffer.from(response.data).toString('base64');
-
-  const filename = path.basename(url.split('?')[0]); // para que sea 'imagen.jpg'
-
-  return {
-    attachment: base64,
-    filename,
-  };
-}
-
-// 🔢 Redondear al 100 más cercano hacia abajo
-function roundToNearest100(price: number): number {
-  return Math.floor(price / 100) * 100;
-}
-
-function formatTitle(title: string): string {
-  return title
-    .replace(/Thai Version/gi, '')
-    .replace(/Player Version/gi, 'Versión Jugador')
-    .replace(/Special Kit/gi, 'Kit Especial')
-    .replace(/Authentic Jersey/gi, '')
-    .replace(/Authentic/gi, '')
-    .replace(/Limited Edition/gi, 'Edición Limitada')
-    .replace(/Jersey/gi, '')
-    .replace(/Shirt and Shorts/gi, '')
-    .replace(/\bHome\b/gi, 'Local')
-    .replace(/\bFourth\b/gi, 'Cuarta')
-    .replace(/\bSpecial\b/gi, 'Especial')
-    .replace(/\bTraining\b/gi, 'Entrenamiento')
-    .replace(/\bAway\b/gi, 'Alternativa')
-    .replace(/\bAlternate\b/gi, 'Alternativa')
-    .replace(/\bThird\b/gi, 'Tercera')
-    .replace(/\bGoalkeeper\b/gi, 'Arquero')
-    .replace(/\bKids\b/gi, 'Niños')
-    .replace(/\s+and\s+/gi, ' y ')
-    .replace(/\s+/g, ' ') // Normaliza espacios duplicados
-    .trim();
-}
-
-const COLLECTION_IDS: Record<string, number> = {
-  'premier-league': 479203033281,
-  'serie-a': 479203098817,
-  'la-liga': 479203131585,
-  'ligue-1': 479203164353,
-  bundesliga: 479203197121,
-  retro: 479299436737,
-  special: 479299469505,
-  'brasileiro-serie-a': 479364251841,
-  mls: 479364350145,
-  'liga-mx': 479390597313,
-  'scottish-premiership': 479390630081,
-  eredivisie: 479390662849,
-  'liga-profesional': 479390695617, // liga argentina
-  'primeira-liga-1': 479390728385, // portugal
-};
-
-// ... importaciones y funciones anteriores
-
-export async function uploadProductToShopify(productData: any) {
+export async function uploadProductToShopify(productData: ProductData) {
+  console.log('PRODUCT DATA: ', productData);
   const dollarPrice = parseFloat(
     (process.env.DOLLAR_PRICE_FOR_URUGUAY || '1').replace(',', '.'),
   );
@@ -112,17 +52,25 @@ export async function uploadProductToShopify(productData: any) {
       },
     },
   );
-
+  // hasta aca
   const productId = productRes.data.product.id;
 
   // Determinar la colección única a usar
   let finalCollectionHandle = productData.collectionHandle;
+  console.log('Collection handle: ', finalCollectionHandle);
 
   if (/retro/i.test(productData.title)) {
     finalCollectionHandle = 'retro';
-  } else if (/special/i.test(productData.title)) {
+  } else if (
+    /special/i.test(productData.title) ||
+    /Limited Edition/i.test(productData.title)
+  ) {
     finalCollectionHandle = 'special';
+  } else if (/Jacket/i.test(productData.title)) {
+    finalCollectionHandle = 'jacket';
   }
+
+  console.log('Final collection handle: ', finalCollectionHandle);
 
   const collectionId = COLLECTION_IDS[finalCollectionHandle];
 
