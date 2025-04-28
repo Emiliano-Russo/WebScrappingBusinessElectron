@@ -112,7 +112,7 @@ export const Product: React.FC = () => {
             <p>Precio: ${product.price}</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {product.images.map((img: string, i: number) => (
-                <img key={i} src={img} style={{ width: 100 }} />
+                <img key={i} src={img} style={{ width: 200 }} />
               ))}
             </div>
           </div>

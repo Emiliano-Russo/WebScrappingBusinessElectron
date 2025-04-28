@@ -40,8 +40,8 @@ export async function uploadProductToShopify(productData: ProductData) {
         variants: ['S', 'M', 'L', 'XL', 'XXL'].map((size) => ({
           option1: size,
           price: roundedPrice.toFixed(0),
-          inventory_management: 'shopify',
-          inventory_quantity: 10,
+          inventory_management: null,
+          inventory_policy: 'continue',
         })),
       },
     },
@@ -63,10 +63,16 @@ export async function uploadProductToShopify(productData: ProductData) {
     finalCollectionHandle = 'retro';
   } else if (
     /special/i.test(productData.title) ||
-    /Limited Edition/i.test(productData.title)
+    /Limited Edition/i.test(productData.title) ||
+    /Lifestyler/i.test(productData.title) ||
+    /LFSTLR/i.test(productData.title)
   ) {
     finalCollectionHandle = 'special';
-  } else if (/Jacket/i.test(productData.title)) {
+  } else if (
+    /Jacket/i.test(productData.title) ||
+    /Sweater/i.test(productData.title) ||
+    /Hoodie/i.test(productData.title)
+  ) {
     finalCollectionHandle = 'jacket';
   }
 
@@ -92,6 +98,29 @@ export async function uploadProductToShopify(productData: ProductData) {
       },
     );
   }
+
+  // Siempre establecer el metafield, true o false según el título
+  const esVersionJugador = /player version|versión jugador/i.test(
+    productData.title,
+  );
+
+  await axios.post(
+    `${process.env.SHOPIFY_DOMAIN}/admin/api/2023-10/products/${productId}/metafields.json`,
+    {
+      metafield: {
+        namespace: 'camisetazo',
+        key: 'version_jugador',
+        value: esVersionJugador ? 'true' : 'false',
+        type: 'boolean',
+      },
+    },
+    {
+      headers: {
+        'X-Shopify-Access-Token': process.env.SHOPIFY_ACCESS_TOKEN!,
+        'Content-Type': 'application/json',
+      },
+    },
+  );
 
   return productRes.data;
 }
