@@ -71,7 +71,8 @@ export async function uploadProductToShopify(productData: ProductData) {
   } else if (
     /Jacket/i.test(productData.title) ||
     /Sweater/i.test(productData.title) ||
-    /Hoodie/i.test(productData.title)
+    /Hoodie/i.test(productData.title) ||
+    /Windbreaker/i.test(productData.title)
   ) {
     finalCollectionHandle = 'jacket';
   }

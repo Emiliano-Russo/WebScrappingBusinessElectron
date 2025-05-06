@@ -3,24 +3,43 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { collections_huangali } from './collections';
 
 export const Product: React.FC = () => {
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [selected, setSelected] = React.useState<number[]>([]);
-  const [filterKids, setFilterKids] = React.useState<boolean>(true);
-  const [page, setPage] = React.useState<number>(1);
-  const [progress, setProgress] = React.useState<string | null>(null);
-
   const { league: slug } = useParams();
   const navigate = useNavigate();
   const selectedCollection = collections_huangali.find((l) => l.title === slug);
 
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [selected, setSelected] = React.useState<number[]>([]);
+  const [filterKids, setFilterKids] = React.useState<boolean>(true);
+  const [filterJerseyAndShort, setFilterJerseyAndShort] =
+    React.useState<boolean>(false);
+  const [page, setPage] = React.useState<number>(1);
+  const [progress, setProgress] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      window.localStorage.removeItem('customScrapUrl');
+    };
+  }, []);
+
+  if (!selectedCollection) {
+    return <div>Error: Colección no encontrada</div>;
+  }
+
   const handleScrap = async () => {
-    setProducts([]); // ← Limpieza previa opcional
+    setProducts([]);
     setSelected([]);
-    const fullUrl = `${selectedCollection!.link}?page=${page}`;
+
+    const customUrl = window.localStorage.getItem('customScrapUrl');
+    const baseLink = customUrl ? customUrl : selectedCollection.link;
+
+    const separator = baseLink.includes('?') ? '&' : '?';
+    const fullUrl = `${baseLink}${separator}page=${page}`;
+
     const result = await window.electron.ipcRenderer.invoke(
       'scrap-league',
       fullUrl,
     );
+
     if (!result.error) {
       setProducts(result.map((p: any) => ({ ...p, extraImages: [] })));
       setSelected([]);
@@ -54,10 +73,6 @@ export const Product: React.FC = () => {
     alert('Carga finalizada');
   };
 
-  if (!selectedCollection) {
-    return <div>Error: Colleccion no encontrada</div>;
-  }
-
   return (
     <div style={{ padding: '20px' }}>
       <button onClick={() => navigate(-1)}>← Volver</button>
@@ -76,14 +91,25 @@ export const Product: React.FC = () => {
             Agregar {selected.length} a Shopify
           </button>
         )}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <h4>Filtrar Niños</h4>
-          <input
-            type="checkbox"
-            checked={filterKids}
-            onChange={(val) => setFilterKids(val.target.checked)}
-            style={{ marginRight: '8px', width: 20, height: 15 }}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <h4 style={{ marginRight: 8 }}>Filtrar Niños</h4>
+            <input
+              type="checkbox"
+              checked={filterKids}
+              onChange={(val) => setFilterKids(val.target.checked)}
+              style={{ width: 20, height: 15 }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <h4 style={{ marginRight: 8 }}>Filtrar "Jersey and Short"</h4>
+            <input
+              type="checkbox"
+              checked={filterJerseyAndShort}
+              onChange={(val) => setFilterJerseyAndShort(val.target.checked)}
+              style={{ width: 20, height: 15 }}
+            />
+          </div>
         </div>
         {progress && (
           <span style={{ marginLeft: 10 }}>Progreso: {progress}</span>
@@ -91,8 +117,12 @@ export const Product: React.FC = () => {
       </div>
 
       {products
-        .map((product, idx) => ({ product, idx })) // incluimos índice real
-        .filter(({ product }) => !filterKids || !/kids/i.test(product.title))
+        .map((product, idx) => ({ product, idx }))
+        .filter(
+          ({ product }) =>
+            (!filterKids || !/kids/i.test(product.title)) &&
+            (!filterJerseyAndShort || !/jersey and short/i.test(product.title)),
+        )
         .map(({ product, idx }) => (
           <div
             key={idx}
